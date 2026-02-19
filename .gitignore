@@ -1,0 +1,46 @@
+# --- 가상환경 (Virtual Environment) ---
+# 프로젝트마다 독립적인 패키지 관리를 위해 제외합니다.
+venv/
+.venv/
+env/
+
+# --- Python 실행 및 빌드 파일 ---
+# 파이썬이 실행될 때 자동으로 생성되는 캐시 파일들입니다.
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- 환경 변수 및 비밀 정보 (Security) ---
+# DB 접속 정보, JWT Secret Key, API 키 등이 들어있으므로 절대 올리면 안 됩니다.
+.env
+.env.shared
+.env.secret
+
+# --- 데이터베이스 (Database) ---
+# SQLite를 사용할 경우 생성되는 데이터베이스 파일입니다.
+*.sqlite3
+*.db
+
+# --- 에디터 및 OS 설정 ---
+# 개발 도구에서 자동으로 생성하는 설정 파일들입니다.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
