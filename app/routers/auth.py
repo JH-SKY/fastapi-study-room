@@ -3,7 +3,7 @@ from app.database import get_db
 from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
 from app.services.auth_service import auth_service
 from sqlalchemy.ext.asyncio import AsyncSession
-
+HTTPException
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])

@@ -105,3 +105,32 @@
     - 이제 발급된 토큰을 통해 사용자가 누구인지 서버가 기억할 수 있는 'Stateful'한 상태가 되었음. 이 토큰은 앞으로 모든 관리자 전용 API의 열쇠가 됨.
 - **성장 포인트**: 
     - 복잡한 비동기 흐름과 외부 라이브러리(PyJWT, bcrypt) 설정을 큰 에러 없이 한 번에 연결하며 전체적인 서버 로직 흐름을 파악함.
+
+## 📅 2026-02-20: 관리자 권한 기반 룸 생성 기능 구현 및 트랜잭션 최적화
+
+### 9. ⚠️ [Error] Pydantic-DB 모델 간 타입 불일치
+- **Error message**: `"msg": "Input should be a valid string"`, `"input": 4`
+- **Situation**: 포스트맨으로 `floor: 4`(숫자)를 보냈으나 스키마에서 에러 발생, 문자로 보내니 DB 모델(`int`)과 충돌하여 500 서버 에러 발생.
+- **Root cause analysis**: 
+    - `RoomCreate` 스키마는 `str`로, `StudyRoom` 모델은 `int`로 설계되어 데이터 흐름 단계별로 타입 충돌 발생.
+- **Solution**: 스키마와 모델의 타입을 `int`로 통일하고 DB 테이블을 재생성하여 정합성 맞춤.
+- **Growth point**: 데이터의 흐름(Postman -> Schema -> Model -> DB) 단계별 타입 체크의 중요성을 깨달음.
+
+### 10. ⚠️ [Error] SQLAlchemy 트랜잭션 중복 호출 (Session Conflict)
+- **Error message**: `sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.`
+- **Situation**: 라우터의 인증 의존성(`get_current_admin_user`)에서 이미 세션 트랜잭션이 시작되었는데, 서비스 계층에서 `async with db.begin()`을 또 호출함.
+- **Root cause analysis**: 
+    - FastAPI의 Dependency Injection 구조상 `get_db`를 공유하는 과정에서 인증 단계(`get_current_user`)를 거치며 트랜잭션이 이미 활성화된 상태였음.
+    - 중복 `begin()`은 SQLAlchemy에서 허용되지 않음.
+- **Solution**: 
+    - 서비스 계층에서 `async with db.begin()`을 제거.
+    - 대신 `await db.commit()`과 `try-except` 문을 사용해 이미 시작된 트랜잭션에 '숟가락'을 얹는 방식으로 수정.
+- **Growth point**: 비동기 환경에서 세션 생명주기와 트랜잭션 전파(Propagation) 개념을 실전 에러를 통해 체득함.
+
+### 11. ✅ [Feature] 관리자 전용 자물쇠(Role-based Access Control) 적용 성공
+- **Main content**: `AuthService`에 JWT 검증 및 `admin` 권한 확인 로직 통합 및 라우터 보호.
+- **Success points**: 
+    - 단순히 로그인 여부를 넘어 유저의 `role`을 검사하는 2단계 보안망 구축.
+    - 서비스-레포지토리 패턴을 유지하면서 트랜잭션 안전성 확보.
+- **Practical perspective**: 실무에서 빈번한 '인증과 비즈니스 로직 간 세션 공유' 문제를 해결해 봄으로써 구조적인 안목이 넓어짐.
+- **Growth point**: 에러 메시지의 `begin` 키워드를 보고 트랜잭션 중복을 의심하는 '사고 과정' 훈련 완료.

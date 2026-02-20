@@ -3,18 +3,18 @@ from app.database import AsyncSessionLocal
 from fastapi import FastAPI, Request
 from app.database import Base, engine
 from app import models
-from app.routers import auth, user
+from app.routers import auth, user, rooms
 from app.services.auth_service import auth_service
 
 # 기존 테이블 지우기
 # models.Base.metadata.drop_all(bind=engine)
-
 # 정의된 모델들을 기반으로 DB에 테이블을 생성한다.
 # models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(user.router)
 app.include_router(auth.router)
+app.include_router(rooms.router)
 
 # 1. 테이블 생성 방식을 비동기(startup)로 변경
 @app.on_event("startup")
