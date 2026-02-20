@@ -1,10 +1,13 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-# 환경 변수 로드
-load_dotenv()
+# 현재 파일(database.py)의 위치를 기준으로 상위 폴더(..)에 있는 .env 찾기
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+# .env 파일에서 DATABASE_URL 읽어오기
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # DB 엔진 생성
@@ -24,3 +27,8 @@ def get_db():
         yield db
     finally:
         db.close()
+
+print(f"DEBUG: DATABASE_URL is -> {DATABASE_URL}")
+
+if DATABASE_URL is None:
+    print("❌ 에러: .env 파일을 찾지 못했거나 내용이 비어있습니다!")

@@ -9,21 +9,26 @@ if TYPE_CHECKING:
     from app.models.room import StudyRoom
     from app.models.review import Review
 
-#강의 예약 모델(중계테이블)
+
+# 강의 예약 모델(중계테이블)
 class Reservation(Base):
     __tablename__ = "reservations"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
-    
-    reservation_date: Mapped[date] = mapped_column(Date, nullable=False) # 예약 날짜
-    start_time: Mapped[int] = mapped_column(nullable=False) # 시작 (예: 14)
-    end_time: Mapped[int] = mapped_column(nullable=False) # 종료 (예: 16)
-    status: Mapped[str] = mapped_column(default="CONFIRMED") # 상태 관리
+
+    reservation_date: Mapped[date] = mapped_column(Date, nullable=False)  # 예약 날짜
+    start_time: Mapped[int] = mapped_column(nullable=False)  # 시작 (예: 14)
+    end_time: Mapped[int] = mapped_column(nullable=False)  # 종료 (예: 16)
+    status: Mapped[str] = mapped_column(default="CONFIRMED")  # 상태 관리
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-   
+    # [v1.2 추가] 취소된 시각 (취소 시에만 값이 들어감)
+    canceled_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
     # 관계 설정: N:1 관계 및 Review와의 관계
     user: Mapped["User"] = relationship("User", back_populates="reservations")
     room: Mapped["StudyRoom"] = relationship("StudyRoom", back_populates="reservations")
-    reviews: Mapped[List["Review"]] = relationship("Review", back_populates="reservation")
+    reviews: Mapped[List["Review"]] = relationship(
+        "Review", back_populates="reservation"
+    )
