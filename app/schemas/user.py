@@ -51,6 +51,9 @@ class UserLogin(BaseModel):
     student_id: str
     password: str
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 # 4. 정보 수정 시 사용 (모든 필드를 선택사항으로 설정)
 class UserUpdate(BaseModel):

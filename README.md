@@ -12,24 +12,17 @@
     * `.gitignore`
     * `README.md`
     * `uv.lock`
-    * `.env` : [v1.1 추가] PostgreSQL 접속 정보 관리
+    * `.env` 
     * **app/**
         * **models/** : [DB 설계도] 테이블 정의 (SQLAlchemy 2.0)
-            * `__init__.py` : [v1.1 추가] 모든 모델 통합 관리 및 __all__ 설정
-            * `user.py` : 사용자 테이블 및 권한(role) 설정
-            * `room.py`, `reservation.py`, `review.py` : 각 핵심 도메인 테이블 정의
         * **schemas/** : [데이터 규격] Pydantic 모델
-            * `user.py` : 회원가입 요청 및 유저 응답 데이터 규격
-            * `auth.py` : 로그인 및 JWT 토큰 규격
         * **services/** : [핵심 로직] 비즈니스 규칙 및 검증
-            * `auth_service.py` : **[v1.4 추가] 회원가입 로직 및 비밀번호 처리**
         * **routers/** : [안내 데스크] API 엔드포인트
-            * `auth.py` : **[v1.4 추가] 가입(Signup)/로그인 API 라우팅**
         * **docs/** : [프로젝트 문서화] 설계 및 자료 관리
             * **images/** : ERD v1.2 
             * `learning_log.md` : 트러블슈팅 정리모음집
-        * `database.py` : **[v1.4 수정] PostgreSQL 엔진 설정 및 get_db 구현 완료**
-        * `main.py` : **[v1.1 수정] 테이블 자동 생성 로직 예정**
+        * `database.py`
+        * `main.py` 
 
 ---
 
@@ -85,6 +78,8 @@
 * **[v1.4] 패키지 구조화**: `__init__.py`와 `__all__`을 활용하여 수많은 모델 클래스를 효율적으로 관리하고 임포트 지옥을 해결하는 실무적인 구조를 설계했습니다.
 * **[v1.4] 로그 분석의 중요성**: 500 에러 발생 시 미들웨어를 통해 숨겨진 에러 로그를 강제로 출력하여 원인을 분석하는 능력을 길렀습니다.
 * **[v1.5] 비동기 패러다임 이해**: 동기 코드를 비동기로 전환하며 await의 위치와 run_sync를 통한 동기 함수 호출 등 비동기 프로그래밍의 핵심 원리를 실전 코드로 체득했습니다.
+* **[v1.6] 인증 시스템 구축**: 단순히 로그인을 구현하는 것에 그치지 않고, 비밀번호 단방향 해싱(bcrypt)과 JWT 토큰 기반의 무상태(Stateless) 인증 방식을 적용하여 실무 수준의 보안 기초를 다졌습니다.
+
 ---
 
 ## 6. 📝 업데이트 기록 (Changelog)
@@ -98,6 +93,10 @@
 * **v1.3**: room테이블 상세설명 필드 추가 (erd) 
 * **v1.4**: **회원가입(User Signup) 기능 구현 완료 및 DB 연동 성공** 
 * **v1.5**: 전체 시스템 비동기(Async/Await) 아키텍처로 전환, 관리자 계정(role: admin) 자동 생성(Seeding) 로직 구현
+* **v1.6**
+  - 로그인(Login) API 구현 및 JWT 토큰 발급 로직 완성
+  - bcrypt를 이용한 보안 비밀번호 검증 시스템 적용
+  - 환경변수를 통한 JWT 보안 설정(Secret Key, Algorithm) 관리
 ---
 
 ## 🛠️ 트러블슈팅 및 학습 기록 (Troubleshooting & TIL)

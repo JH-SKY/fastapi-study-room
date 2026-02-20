@@ -1,8 +1,12 @@
-from sqlalchemy.ext.asyncio import AsyncSession # Session 대신 AsyncSession
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession 
 from fastapi import HTTPException, status
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserLogin
 from app.repositories.user_repo import user_repo 
 import bcrypt 
+import jwt
+from app.database import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 class AuthService:
     # 비밀번호 해싱은 CPU 작업이므로 async가 아니어도 됩니다.
@@ -43,6 +47,32 @@ class AuthService:
             raise e
 
         return new_user
+    
+    # 1. 외부에서 딕셔너리로 데이터를 넉넉하게 받아서
+    def _create_access_token(self, data: dict):
+        to_encode = data.copy()
+        # 2. 만료 시간만 추가로 계산해서 넣고
+        expire = datetime.now(timezone.utc) + timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+        to_encode.update({"exp": expire})
+        # 3. 사인해서 내보낸다!
+        return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    async def login(self, db: AsyncSession, data: UserLogin):
+        user = await user_repo.get_by_student_id(db, student_id=data.student_id)
+        
+        # 비밀번호 검증
+        if not user or not bcrypt.checkpw(data.password.encode("utf-8"), user.password.encode("utf-8")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="학번 또는 비밀번호가 일치하지 않습니다.",
+            )
+
+        # 🎫 관리자 권한(role)을 담은 토큰 발행
+        access_token = self._create_access_token(
+            data={"sub": user.student_id, "role": user.role}
+        )
+        
+        return {"access_token": access_token, "token_type": "bearer"}
     
 
     # 관리자계정 생성 로직 (비동기 버전)
