@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from app.models.reservation import Reservation
     from app.models.review import Review
 
+# 스터디룸 모델
 class StudyRoom(Base):
     __tablename__ = "rooms"
 
@@ -15,7 +16,8 @@ class StudyRoom(Base):
     capacity: Mapped[int] = mapped_column(nullable=False) # 수용 인원
     has_whiteboard: Mapped[bool] = mapped_column(default=False)
     has_projector: Mapped[bool] = mapped_column(default=False)
-
+    is_active: Mapped[bool] = mapped_column(default=True)
+    image_url: Mapped[str] = mapped_column(nullable=True)
     # 관계 설정: Room은 여러 Reservation/Review와 연결됨
     reservations: Mapped[List["Reservation"]] = relationship("Reservation", back_populates="room")
     reviews: Mapped[List["Review"]] = relationship("Review", back_populates="room")
