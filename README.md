@@ -45,7 +45,7 @@
 ---
 
 ## 3. 🏗️ 설계 및 구조 (Architecture)
-<img src="./app/docs/images/erd_1.1.png" width="50%" alt="ERD v1.1">
+<img src="./app/docs/images/erd_1.2.png" width="50%" alt="ERD v1.2">
 
 ### 3.1 Layered Architecture
 * **Router → Service → Repository → Model**로 이어지는 4계층 구조를 채택했습니다.
@@ -86,6 +86,8 @@
   - 유저 권한(`role`) 및 가입 시간 추가.
   - 스터디룸 운영 상태(`is_active`) 및 이미지 필드(`nullable=True`) 추가.
   - 전 모델 `created_at` 타임스탬프 적용.
+* **v1.3**: room테이블 상세설명 필드 추가 (erd) 
+
 ---
 
 ## 🛠️ 트러블슈팅 및 학습 기록 (Troubleshooting & TIL)
