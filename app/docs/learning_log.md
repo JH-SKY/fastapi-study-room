@@ -164,3 +164,16 @@
     - `int` 비교 연산으로 DB 성능 최적화 및 비즈니스 정책(8대 원칙)의 정확한 코드화 달성.
 - **Growth point**:
     - 복잡한 비즈니스 요구사항을 단순하고 강력한 SQL 로직으로 변환하는 설계 능력을 배양함.
+
+## 📅 2026-02-21: 예약 시스템 완성 및 리뷰 시스템 구축 
+
+### 14. ✅ [Feature] 리뷰 시스템 4대 검증 로직 구현
+- **Main content**:
+    - 예약 데이터 기반 실이용자 전용 리뷰 작성 시스템 구축.
+    - 본인 확인, 예약 상태, 중복 여부, 7일 이내 기한 체크 로직 적용.
+- **Success points**:
+    - `datetime.combine(res.reservation_date, time.min) + timedelta(hours=res.end_time)` 식을 통해 정확한 이용 종료 시점 산출 성공.
+- **Practical perspective**:
+    - "예약한 사람만 쓸 수 있다"는 단순한 기획을 실제 데이터(FK)와 시간 계산으로 엄격하게 보호하여 허위 리뷰를 방지함.
+- **Growth point**:
+    - 토큰 기반 인증(Authentication)과 데이터 소유권 기반 인가(Authorization)의 차이를 코드로 실천함.
