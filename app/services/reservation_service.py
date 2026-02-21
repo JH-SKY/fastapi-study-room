@@ -41,24 +41,37 @@ class ReservationService:
         return {"message": "정상적으로 취소되었습니다."}
 
     async def update_res(self, db, user_id, res_id, res_in):
-        # 1. 기존 예약 조회
+        # 1. 조회 (레포지토리 이용)
         res = await reservation_repo.get_by_id(db, res_id)
         if not res or res.user_id != user_id:
             raise HTTPException(status_code=404, detail="예약을 찾을 수 없습니다.")
 
-        # 2. 변경 가능 시간 확인 (규칙 4)
         self._check_modification_limit(res.reservation_date, res.start_time)
         
-        # 3. 필드 업데이트 (PATCH 로직)
         update_data = res_in.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(res, key, value)
         
-        # 4. 시간 변경 시 중복 체크 필요 (여기에 로직 추가 가능)
+        # 2. 비즈니스 로직 판단 (중복 체크 등)
+        if any(k in update_data for k in ["start_time", "end_time", "reservation_date"]):
+            new_date = update_data.get("reservation_date", res.reservation_date)
+            new_start = update_data.get("start_time", res.start_time)
+            new_end = update_data.get("end_time", res.end_time)
+            
+            self._validate_reservation_rules(new_date, new_start, new_end)
+
+            overlap = await reservation_repo.find_overlap(
+                db, new_date, new_start, new_end, 
+                room_id=res.room_id, exclude_id=res_id
+            )
+            if overlap:
+                raise HTTPException(status_code=400, detail="해당 시간대에 이미 예약이 있습니다.")
+
+        # 3. [변경포인트] 실제 수정 행위는 레포지토리에 위임!
+        updated_res = await reservation_repo.update(db, res, update_data)
         
+        # 4. 트랜잭션 확정
         await db.commit()
-        await db.refresh(res)
-        return res
+        await db.refresh(updated_res)
+        return updated_res
 
     def _validate_reservation_rules(self, res_date, start, end):
         now = datetime.now()

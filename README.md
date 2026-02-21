@@ -8,22 +8,19 @@
 
 ## 1. 📂 프로젝트 구조 (Repository Structure)
 
-* **study-room-reservation/** (최상위 루트)
-    * `.gitignore`
+* **study-room-reservation/** : 프로젝트 루트
+    * `.env` : 환경 변수 관리 (DB_URL, JWT_SECRET 등)
     * `README.md`
     * `uv.lock`
-    * `.env` 
-    * **app/**
-        * **models/** : [DB 설계도] 테이블 정의 (SQLAlchemy 2.0)
-        * **schemas/** : [데이터 규격] Pydantic 모델
-        * **services/** : [핵심 로직] 비즈니스 규칙 및 검증
-        * **routers/** : [안내 데스크] API 엔드포인트
-        * **docs/** : [프로젝트 문서화] 설계 및 자료 관리
-            * **images/** : ERD v1.2 
-            * `learning_log.md` : 트러블슈팅 정리모음집
-        * `database.py`
-        * `main.py` 
-
+    * **app/** : 소스 코드 메인 패키지
+        * **models/** : SQLAlchemy 2.0 기반 테이블 정의
+        * **schemas/** : Pydantic을 활용한 데이터 규격 및 검증
+        * **repositories/** : SQL 기반 데이터 접근 계층 (Repository Pattern)
+        * **services/** : 핵심 비즈니스 로직 및 정책 가드 (Service Layer)
+        * **routers/** : FastAPI 엔드포인트 및 API 경로 설정
+        * **docs/** : `learning_log.md` (트러블슈팅 및 학습 기록)
+        * `database.py` : 비동기 엔진(AsyncEngine) 및 세션 설정
+        * `main.py` : FastAPI 앱 초기화 및 미들웨어 설정
 ---
 
 ## 2. 🎯 기획 의도 (Why)
@@ -120,7 +117,10 @@
   - 리뷰 작성 4대 검증 로직(본인/상태/중복/7일기한) 구현
   - 토큰 기반 리뷰 삭제 및 조회(방별/내리뷰) 기능 추가
   - SQLAlchemy `InvalidRequestError` 해결을 위한 트랜잭션 관리 방식 통일
-
+* **v2.1**: 
+    - **예약 수정 로직 보안 강화**: 수정 시 발생할 수 있는 시간 중복 체크 누락 버그 해결.
+    - **Repository 패턴 통일**: 모든 CUD 행위를 Repository 계층으로 위임하여 계층 간 역할 분담 최적화.
+    - **트랜잭션 관리 일관성**: 서비스 레이어의 `db.commit()` 방식으로 전체 세션 관리 통일.
 ---
 
 ## 🛠️ 트러블슈팅 및 학습 기록 (Troubleshooting & TIL)

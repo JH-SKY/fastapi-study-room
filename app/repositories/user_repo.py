@@ -24,5 +24,13 @@ class UserRepository:
         # flush는 DB에 "일단 이 데이터 넣을 준비해!"
         await db.flush() 
         return db_user
+    
+    async def update(self, db: AsyncSession, user: User, update_data: dict):
+        """전달받은 dictionary 데이터를 기반으로 모델 필드 업데이트"""
+        for field, value in update_data.items():
+            setattr(user, field, value)
+        
+        await db.flush() # 커밋 전 영속성 컨텍스트 반영
+        return user
 
 user_repo = UserRepository()

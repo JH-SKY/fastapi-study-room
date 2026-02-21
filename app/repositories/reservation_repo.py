@@ -49,5 +49,12 @@ class ReservationRepository:
         # flush를 사용하면 commit 전에 DB 아이디(id) 등을 미리 할당받을 수 있어 유용합니다.
         await db.flush() 
         return reservation
+    
+    async def update(self, db: AsyncSession, res_obj: Reservation, update_data: dict):
+        """전달받은 dict 데이터를 기반으로 예약 객체 필드 업데이트"""
+        for key, value in update_data.items():
+            setattr(res_obj, key, value)
+        await db.flush()
+        return res_obj
 
 reservation_repo = ReservationRepository()
