@@ -134,3 +134,33 @@
     - 서비스-레포지토리 패턴을 유지하면서 트랜잭션 안전성 확보.
 - **Practical perspective**: 실무에서 빈번한 '인증과 비즈니스 로직 간 세션 공유' 문제를 해결해 봄으로써 구조적인 안목이 넓어짐.
 - **Growth point**: 에러 메시지의 `begin` 키워드를 보고 트랜잭션 중복을 의심하는 '사고 과정' 훈련 완료.
+
+## 📅 2026-02-21: 예약 시스템 비즈니스 로직 구현 및 트랜잭션 에러 해결
+
+### 12. ⚠️ [Error] SQLAlchemy 트랜잭션 중첩 에러 (InvalidRequestError)
+- **Error message**
+    - `sqlalchemy.exc.InvalidRequestError: A transaction is already begun on this Session.`
+- **Situation**
+    - `ReservationService`에서 예약 생성(`create_res`) 시 `async with db.begin():` 블록에 진입할 때 발생.
+    - 특히 로그인 인증(`get_current_user`) 의존성이 포함된 API에서만 발생함.
+- **Root cause analysis**
+    - **원인**: `Depends(get_current_user)`가 실행되면서 이미 DB 세션을 사용하고 트랜잭션을 시작함.
+    - **충돌**: 이미 트랜잭션이 활성화된 세션에 서비스 레이어에서 다시 `db.begin()`을 시도하여 중복 트랜잭션 에러 발생.
+- **Solution**
+    - 서비스 레이어 내부의 `async with db.begin():` 블록을 모두 제거.
+    - 대신 로직 마지막에 `await db.commit()`을 명시적으로 호출하여 세션 흐름을 하나로 통합함.
+- **Growth point**
+    - FastAPI의 의존성 주입(DI) 범위 내에서 세션 생명주기가 어떻게 관리되는지 완벽히 이해함.
+    - 아키텍처 구조에 따라 트랜잭션 관리 전략(Implicit vs Explicit)을 유연하게 선택해야 함을 배움.
+
+### 13. ✅ [Feature] 예약 중복 방지 알고리즘 및 8대 원칙 적용 성공
+- **Main content**:
+    - `int` 기반 시간 필드를 활용한 예약 관리 및 중복 예약 차단 시스템 구축.
+    - `(기존_시작 < 새_종료) AND (기존_종료 > 새_시작)` 공식을 통한 시간 겹침 검증.
+- **Success points**:
+    - 방 중복과 유저 중복 예약을 SQL 한 번으로 차단하는 효율적인 쿼리 구현.
+    - 수정 시 `exclude_id` 처리를 통해 본인 데이터와의 충돌 방지 로직 적용.
+- **Practical perspective**:
+    - `int` 비교 연산으로 DB 성능 최적화 및 비즈니스 정책(8대 원칙)의 정확한 코드화 달성.
+- **Growth point**:
+    - 복잡한 비즈니스 요구사항을 단순하고 강력한 SQL 로직으로 변환하는 설계 능력을 배양함.
