@@ -84,5 +84,35 @@ class ReservationService:
         now = datetime.now()
         if res_date == now.date() and now.hour >= (start_time - 1):
             raise HTTPException(status_code=400, detail="이용 시작 1시간 전부터는 취소/변경이 불가능합니다.")
+        
+    async def get_my_res(self, db, user_id):
+        """내 예약 목록을 조회하며 실시간 상태를 계산하여 보여줌"""
+        from datetime import time  # 상단에 없다면 추가
+        
+        # 1. DB에서 내 예약 목록 가져오기
+        reservations = await reservation_repo.get_my_list(db, user_id)
+        now = datetime.now()
+
+        # 2. 각 예약 객체에 '실시간 딱지' 붙이기
+        for res in reservations:
+            if res.status == "CANCELLED":
+                res.display_status = "CANCELLED"
+            else:
+                # 시작/종료 시간을 datetime 객체로 만들어 현재 시간과 비교
+                res_start = datetime.combine(res.reservation_date, time(res.start_time))
+                res_end = datetime.combine(res.reservation_date, time(res.end_time))
+                
+                if now < res_start:
+                    res.display_status = "UPCOMING"    # 이용 전
+                elif res_start <= now < res_end:
+                    res.display_status = "IN_USE"      # 이용 중
+                else:
+                    res.display_status = "COMPLETED"   # 이용 완료 (자동 전환 핵심!)
+        
+        return reservations
+    
+    async def get_my_reservations(self, db, user_id):
+        """내 예약 목록 조회 (나중에 필터링이나 정렬 로직이 추가될 수 있음)"""
+        return await reservation_repo.get_my_list(db, user_id)
 
 reservation_service = ReservationService()

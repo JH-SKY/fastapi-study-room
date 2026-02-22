@@ -1,18 +1,16 @@
-from http.client import HTTPException
-
+from datetime import datetime
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.room import StudyRoom
 from app.schemas.room import RoomCreate, RoomUpdate
 from app.repositories.room_repo import room_repo
-
+from app.repositories.reservation_repo import reservation_repo # 👈 추가: 예약 확인용
 
 class RoomService:
-    async def create_room(self,db: AsyncSession, room_in: RoomCreate):
+    async def create_room(self, db: AsyncSession, room_in: RoomCreate):
         new_room = StudyRoom(**room_in.model_dump())
-                # 2. 레포지토리에 맡기기 (이 안에서 db.add와 flush가 일어남)
         await room_repo.save_room(db, new_room)
-            
-            # 3. 트랜잭션 종료 후 데이터 최신화
+        
         try:
             await db.commit() 
             await db.refresh(new_room)
@@ -22,47 +20,71 @@ class RoomService:
                 
         return new_room
     
-    # 전체조회
+    # [수정] 전체 조회: 실시간 상태(availability_status) 계산 로직 추가
     async def get_rooms(self, db: AsyncSession):
-        # 레포지토리의 get_rooms를 호출해서 결과만 바로 반환
-        return await room_repo.get_all_rooms(db)
+        rooms = await room_repo.get_all_rooms(db)
+        now = datetime.now()
+
+        for room in rooms:
+            # 1. 운영 여부 확인
+            if not room.is_active:
+                room.availability_status = "INACTIVE"
+                continue
+            
+            # 2. 현재 시간 중복 예약 확인 (Repo의 find_overlap 활용)
+            # 현재 시간을 시작점으로 1시간 동안 예약이 있는지 확인
+            is_reserved = await reservation_repo.find_overlap(
+                db, 
+                res_date=now.date(), 
+                start=now.hour, 
+                end=now.hour + 1, 
+                room_id=room.id
+            )
+
+            # 3. 계산된 상태 주입
+            room.availability_status = "IN_USE" if is_reserved else "AVAILABLE"
+            
+        return rooms
     
-    # 단일조회
+    # [수정] 단일 조회: 실시간 상태 계산 로직 추가
     async def get_room(self, db: AsyncSession, room_id: int):
         room = await room_repo.get_room_by_id(db, room_id)
         if not room:
-            # 데이터가 없을 때 404 에러를 던지는 건 실무 필수 매너!
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="해당 방을 찾을 수 없습니다.")
+        
+        # 실시간 상태 계산
+        now = datetime.now()
+        if not room.is_active:
+            room.availability_status = "INACTIVE"
+        else:
+            is_reserved = await reservation_repo.find_overlap(
+                db, now.date(), now.hour, now.hour + 1, room_id=room.id
+            )
+            room.availability_status = "IN_USE" if is_reserved else "AVAILABLE"
+            
         return room
     
-    # 업데이트
     async def update_room(self, db: AsyncSession, room_id: int, room_in: RoomUpdate):
-            async with db.begin(): # 👈 트랜잭션 관리(관리자)
-                # 1. 조회
-                room = await room_repo.get_room_by_id(db, room_id)
-                if not room:
-                    raise HTTPException(status_code=404, detail="방을 찾을 수 없습니다.")
-
-                # 2. 업데이트 데이터 준비
-                update_data = room_in.model_dump(exclude_unset=True)
-
-                # 3. 실제 업데이트 "행위"는 레포에게 시킴
-                updated_room = await room_repo.update_room(db, room, update_data)
-            
-            # with 종료 후 자동 commit
-            await db.refresh(updated_room)
-            return updated_room
-
-    # 삭제
-    async def delete_room(self, db: AsyncSession, room_id: int):
+        # async with db.begin()을 쓰면 내부에서 commit/rollback을 알아서 관리합니다.
         async with db.begin():
-            # 1. 대상 조회
             room = await room_repo.get_room_by_id(db, room_id)
             if not room:
                 raise HTTPException(status_code=404, detail="방을 찾을 수 없습니다.")
 
+            update_data = room_in.model_dump(exclude_unset=True)
+            updated_room = await room_repo.update_room(db, room, update_data)
+        
+        await db.refresh(updated_room)
+        return updated_room
+
+    async def delete_room(self, db: AsyncSession, room_id: int):
+        async with db.begin():
+            room = await room_repo.get_room_by_id(db, room_id)
+            if not room:
+                raise HTTPException(status_code=404, detail="방을 찾을 수 없습니다.")
             
             await room_repo.delete_room(db, room)
+
+    
 
 room_service = RoomService()

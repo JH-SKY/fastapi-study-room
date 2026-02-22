@@ -22,5 +22,6 @@ class RoomUpdate(BaseModel):
 class RoomResponse(RoomBase):
     id: int
     is_active: bool
+    availability_status: str = "AVAILABLE"
 
     model_config = ConfigDict(from_attributes=True)

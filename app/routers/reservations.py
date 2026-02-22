@@ -14,7 +14,7 @@ async def create_reservation(res_in: ReservationCreate, db: AsyncSession = Depen
 
 @router.get("/me", response_model=list[ReservationResponse])
 async def get_my_reservations(db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):
-    return await reservation_repo.get_my_list(db, user.id)
+    return await reservation_service.get_my_reservations(db, user.id)
 
 @router.patch("/{res_id}", response_model=ReservationResponse)
 async def update_reservation(res_id: int, res_in: ReservationUpdate, db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):

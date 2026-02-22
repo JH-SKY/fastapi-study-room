@@ -56,5 +56,17 @@ class ReservationRepository:
             setattr(res_obj, key, value)
         await db.flush()
         return res_obj
+    
+    async def find_active_now(self, db: AsyncSession, room_id: int, target_date, target_hour: int):
+        """[추가] 현재 날짜/시간에 해당 방이 예약(사용) 중인지 확인"""
+        # find_overlap을 재활용합니다. (시작시간 <= 현재시간 < 종료시간)
+        # 즉, 현재 시간이 예약 구간 안에 있으면 중복으로 간주하여 결과가 나옵니다.
+        return await self.find_overlap(
+            db, 
+            res_date=target_date, 
+            start=target_hour, 
+            end=target_hour + 1, # 현재 시간 1시간 슬롯만 체크
+            room_id=room_id
+        )
 
 reservation_repo = ReservationRepository()

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
-from datetime import date, datetime
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from datetime import date, datetime, time
 from typing import Optional, List
 
 class ReservationBase(BaseModel):
@@ -34,5 +34,23 @@ class ReservationResponse(ReservationBase):
     created_at: datetime
     canceled_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def current_status(self) -> str:
+        """DB 데이터와 현재 시간을 대조하여 실시간 상태를 계산"""
+        if self.status == "CANCELLED":
+            return "CANCELLED"
+        
+        now = datetime.now()
+        # 서비스 레이어 로직과 동일하게 날짜와 시간을 결합
+        res_start = datetime.combine(self.reservation_date, time(hour=self.start_time))
+        res_end = datetime.combine(self.reservation_date, time(hour=self.end_time))
+
+        if now < res_start:
+            return "UPCOMING"    # 이용 대기
+        elif res_start <= now < res_end:
+            return "IN_USE"      # 이용 중
+        else:
+            return "COMPLETED"   # 이용 완료
